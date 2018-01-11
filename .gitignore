@@ -1,0 +1,6 @@
+# Ignore all tar files
+*.tar*
+
+# Ignore all data files
+data/
+data/**
