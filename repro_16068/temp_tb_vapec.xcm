@@ -28,3 +28,26 @@ model  phabs*vapec
      5.2095e-07       0.01          0          0      1e+20      1e+24
 statistic test cvm
 fit
+ignore 0.0-0.3, 8.0-**
+notice 0.3-8.0 
+query yes 
+statistic test cvm 
+abund wilm 
+fit 
+cpd /xw 
+setp en 
+setp add 
+setp rebin 2 10 1 
+pl ufspec 
+setp comm we tb_vapec_data 
+plot 
+setp delete 1
+plot model 
+setp comm we tb_vapec_mo 
+plot 
+setp delete 1
+plot ratio 
+setp comm we tb_vapec_resid 
+plot 
+quit 
+y 
