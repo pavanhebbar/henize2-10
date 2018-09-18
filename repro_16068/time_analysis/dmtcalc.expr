@@ -1,0 +1,5 @@
+.period=33500
+.tzero=539493492.438615
+.freq=(1.0/.period)
+GPHASE=((time-(.tzero))*.freq)
+PHASE=(GPHASE-((long)GPHASE))

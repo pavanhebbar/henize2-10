@@ -11,6 +11,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+from matplotlib.ticker import FixedLocator, FixedFormatter, FormatStrFormatter
 
 
 def makeparser():
@@ -34,12 +35,17 @@ def makeparser():
                         'input model will be used.', type=str)
     parser.add_argument('--models', nargs='?', default=None, type=str,
                         help='Names of the additive models used')
-    parser.add_argument('--data_style', '--dp', default='.', type=str,
+    parser.add_argument('--data_style', '--dp', default='k.', type=str,
                         help='Default point style for plotting data points')
     parser.add_argument('--model_style', '--ms', default='-', type=str,
                         help='Default line style for final model')
     parser.add_argument('--comp_style', '--cs', default='--', type=str,
                         help='Default line style for component models')
+    parser.add_argument('--legend', default=False, type=bool,
+                        help='Whether or not legend must be shown')
+    parser.add_argument('--label', default='automatic', type=str,
+                        help='Whether to the label names must be "automatic"'
+                        'or "ask" for labels')
     return parser
 
 
@@ -89,6 +95,8 @@ def process_input(args):
                             models[i] = models[i][:models[i].index(')')]
         args.models = copy.copy(models)
     args.nmodels = len(args.models)
+    if args.nmodels > 3:
+        args.fullmo = "Complete model"
     return args
 
 
@@ -107,8 +115,8 @@ def create_tcl(args):
     outfile = open('temp_'+ args.model_in, 'w+')
     for line in in_file:
         outfile.write(line)
-    outfile.write('ignore 0.0-0.3, 8.0-**\n')
-    outfile.write('notice 0.3-8.0 \n')
+    outfile.write('ignore 0.0-0.3, 10.0-**\n')
+    outfile.write('notice 0.3-10.0 \n')
     outfile.write('query yes \n')
     outfile.write('statistic test cvm \n')
     outfile.write('abund wilm \n')
@@ -117,7 +125,7 @@ def create_tcl(args):
     outfile.write('setp en \n')
     outfile.write('setp add \n')
     outfile.write('setp rebin 2 10 1 \n')
-    outfile.write('pl ufspec \n')
+    outfile.write('pl ldata \n')
     os.system('rm -rf ' + args.outroot + '_data.*')
     os.system('rm -rf ' + args.outroot + '_mo.*')
     os.system('rm -rf ' + args.outroot + '_resid.*')
@@ -139,41 +147,65 @@ def create_tcl(args):
 def plot_figure(args):
     """Plot the .qdp files generated previously."""
     data = np.loadtxt(args.outroot + '_data.qdp', skiprows=3)
-    model = np.loadtxt(args.outroot + '_mo.qdp', skiprows=3)
+    #model = np.loadtxt(args.outroot + '_mo.qdp', skiprows=3)
     residue = np.loadtxt(args.outroot + '_resid.qdp', skiprows=3)
     # f, (ax1, ax2) = plt.subplots(2, sharex=True)
+    minorloc = FixedLocator([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
+                             2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0])
+    minorform = FixedFormatter(['', '', '', '0.5', '', '', '', '',
+                                '2.0', '', '', '5.0', '', '', '', ''])
+    majorloc = FixedLocator([0.1, 1.0, 10.0])
+    majorform = FormatStrFormatter('%1.1f')
     fig = plt.figure()
     grids = gridspec.GridSpec(2, 1, height_ratios=[3, 1])
     ax1 = fig.add_subplot(grids[0])
     ax2 = fig.add_subplot(grids[1], sharex=ax1)
     plt.xlabel('Energy (keV)')
-    ax1.set_ylabel(r'Photons cm$^{-2}$ keV$^{-1}$')
+    ax1.set_ylabel(r'normalized counts s$^{-1}$ keV$^{-1}$')
     ax1.set_xscale('log')
     ax1.set_yscale('log')
-    plt.xlim(0.3, 8.0)
+    plt.xlim(0.3, 10.0)
     ax1.set_ylim(np.min(data[:, 2])*0.5, np.max(data[:, 2])*2.0)
     ax1.errorbar(data[:, 0], data[:, 2], xerr=data[:, 1], yerr=data[:, 3],
-                 fmt=args.data_style, label='data')
-    ax1.plot(model[:, 0], model[:, 2], args.model_style, label=args.fullmo)
+                 fmt=args.data_style)
+    xdata = np.append(data[:, 0] - data[:, 1], data[-1, 0] + data[-1, 1])
+    ydata = np.append(data[:, 4], data[-1, 4])
+    ax1.step(xdata, ydata, where='post', label=args.fullmo)
+    ax1.tick_params(axis='both', which='both', bottom=True, top=True, left=True, right=True,
+                    direction='in')
+    ax1.tick_params(axis='both', which='major', length=8)
+    ax1.tick_params(axis='both', which='minor', length=5)
+    ax1.xaxis.set_major_locator(majorloc)
+    ax1.xaxis.set_major_formatter(majorform)
+    ax1.xaxis.set_minor_locator(minorloc)
+    ax1.xaxis.set_minor_formatter(minorform)
+
+    #ax1.plot(model[:, 0], model[:, 2], args.model_style, label=args.fullmo)
+    comp_styles = ['g--', 'r-.', 'm:', 'm:', 'm:']
     if args.nmodels > 1:
         for i in range(args.nmodels):
-            ax1.plot(model[:, 0], model[:, 3+i], args.comp_style,
+            if args.label == 'ask':
+                args.models[i] = input("Input label for model" +
+                                       args.models[i])
+            ax1.plot(data[:, 0], data[:, 5+i], comp_styles[i],
                      label=args.models[i])
     # ax1.legend()
+    ax2.tick_params(axis='both', which='both', bottom=True, top=True, left=True,
+                    right=True, direction='in', length=8)
+    ax2.tick_params(axis='both', which='major', length=8)
+    ax2.tick_params(axis='both', which='minor', length=5)
     ax2.set_ylabel('Ratio')
     ax2.set_yscale('log')
     ax2.set_ylim(np.min(residue[:, 2])*1.1, np.max(residue[:, 2])*1.1)
     ax2.errorbar(residue[:, 0], residue[:, 2], xerr=residue[:, 1],
                  yerr=residue[:, 3],
                  fmt=args.data_style, label='data')
-    # residue = (data[:, 2] - data[:, 4])/data[:, 3]
-    # ax2.set_ylim(np.min(residue)*1.1, np.max(residue)*1.1)
-    # ax2.errorbar(data[:, 0], residue, xerr=data[:, 1],
-    #             yerr=np.ones_like(residue),
-    #             fmt=args.data_style)
-    ax2.plot(np.linspace(0.3, 8.0, 10), np.ones(10))
-    # plt.legend()
-    plt.tight_layout()
+    ax2.plot(np.linspace(0.3, 10.0, 10), np.ones(10))
+    if args.legend:
+        ax1.legend()
+    fig.subplots_adjust(hspace=0)
+    plt.setp(ax1.get_xticklabels(), visible=False)
+    # plt.tight_layout()
     plt.savefig(args.outroot+'.png')
     plt.show()
 

@@ -1,0 +1,51 @@
+statistic cstat
+data 1:1 henize_spec_grp1.pi
+ignore 1:1,97-99
+
+method leven 100 0.01
+abund wilm
+xsect vern
+cosmo 70 0 0.73
+xset delta 0.01
+systematic 0
+model  TBabs(pegpwrlw + gaussian + gaussian + gaussian + gaussian)
+        0.10115      0.001      0.091      0.091     100000      1e+06
+        1.47743       0.01         -3         -2          9         10
+            0.3      -0.01       -100       -100      1e+10      1e+10
+             10      -0.01       -100       -100      1e+10      1e+10
+     0.00481811       0.01          0          0      1e+20      1e+24
+        0.79426      0.001       0.78       0.78       1.02       1.02
+       0.174659       0.05          0          0         10         20
+     2.4924e-06       0.01          0          0      1e+20      1e+24
+        1.30723     0.0001        1.1        1.1        1.5        1.5
+      0.0445309       0.05          0          0         10         20
+    3.16976e-07       0.01          0          0      1e+20      1e+24
+        1.84739     0.0001       1.74       1.74          2          2
+= p10
+    1.69887e-07       0.01          0          0      1e+20      1e+24
+        4.55498      0.001        4.4        4.4        4.7        4.7
+= p10
+    7.75516e-08       0.01          0          0      1e+20      1e+24
+ignore 0.0-0.3, 10.0-**
+notice 0.3-10.0 
+query yes 
+statistic test cvm 
+abund wilm 
+fit 
+cpd /xw 
+setp en 
+setp add 
+setp rebin 2 10 1 
+pl ldata 
+setp comm we tb_pegpw_gggg_final_data 
+plot 
+setp delete 1
+plot model 
+setp comm we tb_pegpw_gggg_final_mo 
+plot 
+setp delete 1
+plot ratio 
+setp comm we tb_pegpw_gggg_final_resid 
+plot 
+quit 
+y 
