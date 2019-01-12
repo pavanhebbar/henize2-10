@@ -117,6 +117,7 @@ def create_tcl(args):
         outfile.write(line)
     outfile.write('ignore 0.0-0.3, 10.0-**\n')
     outfile.write('notice 0.3-10.0 \n')
+    outfile.write('ignore 10.0-**\n')
     outfile.write('query yes \n')
     outfile.write('statistic test cvm \n')
     outfile.write('abund wilm \n')
@@ -182,14 +183,20 @@ def plot_figure(args):
 
     #ax1.plot(model[:, 0], model[:, 2], args.model_style, label=args.fullmo)
     comp_styles = ['g--', 'r-.', 'm:', 'm:', 'm:']
-    if args.nmodels > 1:
-        for i in range(args.nmodels):
-            if args.label == 'ask':
-                args.models[i] = input("Input label for model" +
-                                       args.models[i])
-            ax1.plot(data[:, 0], data[:, 5+i], comp_styles[i],
-                     label=args.models[i])
-    # ax1.legend()
+    # if args.nmodels > 1:
+    #     for i in range(args.nmodels):
+    #         if args.label == 'ask':
+    #             args.models[i] = input("Input label for model" +
+    #                                    args.models[i])
+    #         ax1.plot(data[:, 0], data[:, 5+i], comp_styles[i],
+    #                  label=args.models[i])
+    ax1.plot(data[:, 0], data[:, -1], comp_styles[0],
+             label=r'Hotter plasma, $kT > 6.5$ keV')
+    ax1.plot(data[:, 0], data[:, -2], comp_styles[1],
+             label=r'Colder plasma, $kT = 0.57$ keV')
+    ax1.plot(data[:, 0], data[:, 5]+data[:, 6], comp_styles[2],
+             label='Background')
+    ax1.legend()
     ax2.tick_params(axis='both', which='both', bottom=True, top=True, left=True,
                     right=True, direction='in', length=8)
     ax2.tick_params(axis='both', which='major', length=8)
